@@ -19,7 +19,7 @@ const gameServer = new core.Server({
   })
 });
 
-// Defien rooms
+// Define rooms
 gameServer.define('my_room', MyRoom);
 
 // Opens server
