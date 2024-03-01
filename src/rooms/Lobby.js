@@ -12,6 +12,10 @@ exports.Lobby = class extends colyseus.Room {
       this.broadcast("switchRoom", "MyRoom"); // Replace "MyRoom" with the game room name when it is made
       console.log(message);
     });
+    this.onMessage("test", (client, message) => { //If we get a message to manually start the game from any client
+      // Tell all clients to switch rooms
+      console.log(`Test message received from ${client.sessionId}: ${message}`);
+    });
 
   }
 
