@@ -1,11 +1,14 @@
 const colyseus = require('colyseus');
 const { MyRoomState } = require('./schema/MyRoomState');
+var Game = require("../game/Game");
 
 exports.MyRoom = class extends colyseus.Room {
   maxClients = 4;
 
   onCreate (options) {
     this.setState(new MyRoomState());
+
+    var game = new Game("testing", "test", "test2", "test3");
 
     this.onMessage("type", (client, message) => {
       //

@@ -1,15 +1,22 @@
 const colyseus = require('colyseus');
-const { GameState } = require('./schema/GameState');
 
-exports.Game = class extends colyseus.Game {
+class Game {
 
-  onCreate (options) {
-    this.setState(new GameState());
+  constructor(playerFirst, answerPlayer, answerWeapon, answerRoom) {
+    this.playerTurn = playerFirst;
+    this.isGameOver = false;
+    this.answerPlayer = answerPlayer;
+    this.answerWeapon = answerWeapon;
+    this.answerRoom = answerRoom;
 
-    this.onMessage("initGame", (client, message) => {
-      console.log("Initializing the Game!");
-    });
+    init();
 
+    console.log("Initialized game!");
   }
 
+  init() {
+    console.log("Starting init!");
+  }
 }
+
+module.exports = Game;
