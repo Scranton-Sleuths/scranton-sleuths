@@ -8,12 +8,10 @@ exports.MyRoom = class extends colyseus.Room {
   onCreate (options) {
     this.setState(new MyRoomState());
 
-    var game = new Game("testing", "test", "test2", "test3");
+    var game = new Game();
 
-    this.onMessage("type", (client, message) => {
-      //
-      // handle "type" message.
-      //
+    this.onMessage("startGame", (client, message) => {
+      game.init(4);
     });
 
   }

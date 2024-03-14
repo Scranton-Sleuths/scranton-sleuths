@@ -1,5 +1,4 @@
 const colyseus = require('colyseus');
-const { CardState } = require('./schema/CardState');
 
 class Card {
 
@@ -8,3 +7,5 @@ class Card {
     this.name = name;
   }
 }
+
+module.exports = Card;
