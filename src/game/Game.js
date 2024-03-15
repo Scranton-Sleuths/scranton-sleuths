@@ -2,6 +2,9 @@ const colyseus = require('colyseus');
 var Card = require("./Card");
 var Player = require("./Player");
 
+
+// If we want this to be the state, which might be a good choice, then this class should extend schema.Schema. Need to import that if so.
+// Also, we would then need to defineTypes() of the values we want exported as part of the state
 class Game {
 
   playerNames = ["Michael Scott", "Dwight Schrutte", "Jim Halpert", "Pam Beesly", "Angela Martin", "Andy Bernard"];
@@ -15,7 +18,7 @@ class Game {
     this.roomCards = [];
 
     this.totalCards = 6 + 6 + 9;
-    this.clientPlayers = [];
+    this.clientPlayers = []; // Consider using MapSchema, which is part of Colyseus, to store the clients https://docs.colyseus.io/state/schema/#mapschema
 
     console.log("Creating card objects!");
 
