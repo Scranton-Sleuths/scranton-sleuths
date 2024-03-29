@@ -7,12 +7,12 @@ exports.Lobby = class extends colyseus.Room {
   onCreate (options) {
     this.setState(new LobbyState());
 
-    this.onMessage("startGame", (client, message) => { //If we get a message to manually start the game from any client
+    this.onMessage("start", (client, message) => { //If we get a message to manually start the game from any client
+      console.log("Received start message from client!")
       // Tell all clients to switch rooms
-      this.broadcast("switchRoom", "MyRoom"); // Replace "MyRoom" with the game room name when it is made
-      console.log(message);
+      this.broadcast("switchRoom", "Game");
     });
-    this.onMessage("test", (client, message) => { //If we get a message to manually start the game from any client
+    this.onMessage("test", (client, message) => { //A test message type
       // Tell all clients to switch rooms
       console.log(`Test message received from ${client.sessionId}: ${message}`);
     });
@@ -23,8 +23,8 @@ exports.Lobby = class extends colyseus.Room {
     console.log(client.sessionId, "joined!");
     console.log(`${this.clients.length} players in lobby.`);
     if (this.clients.length == this.maxClients) { // If all players join, move them to the game room.
-        this.broadcast("switchRoom", "MyRoom"); // Replace "MyRoom" with the game room name when it is made
-        // This is telling the clients to switch rooms, to the room "MyRoom". The logic behind this will have to be implemented.
+        this.broadcast("switchRoom", "Game");
+        // This is telling the clients to switch rooms, to the room "Game". The logic behind this will have to be implemented.
     }
   }
 

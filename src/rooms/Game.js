@@ -1,30 +1,44 @@
 const colyseus = require('colyseus');
-var Card = require("./Card");
-var Player = require("./Player");
+const schema = require('@colyseus/schema');
+var Card = require("../game/Card");
+var Player = require("../game/Player");
+const { GameState } = require('./schema/GameState');
+const MapSchema = schema.MapSchema;
 
-
-// If we want this to be the state, which might be a good choice, then this class should extend schema.Schema. Need to import that if so.
-// Also, we would then need to defineTypes() of the values we want exported as part of the state
-class Game {
+exports.Game = class extends colyseus.Room {
 
   playerNames = ["Michael Scott", "Dwight Schrutte", "Jim Halpert", "Pam Beesly", "Angela Martin", "Andy Bernard"];
   weaponNames = ["Stapler", "Mug", "Scissors", "Dwight's Nunchucks", "Pencil", "Calculator"];
   roomNames = ["Conference Room", "Michael's Office", "Bathroom", "Kitchen", "Break Room", "Warehouse", "Annex", "Reception", "Jim's Office"];
 
-  constructor() {
+  onCreate() {
+
+    this.setState(new GameState());
 
     this.playerCards = [];
     this.weaponCards = [];
     this.roomCards = [];
 
     this.totalCards = 6 + 6 + 9;
-    this.clientPlayers = []; // Consider using MapSchema, which is part of Colyseus, to store the clients https://docs.colyseus.io/state/schema/#mapschema
+    this.clientPlayers = new MapSchema(); // Consider using MapSchema, which is part of Colyseus, to store the clients https://docs.colyseus.io/state/schema/#mapschema
+
+    this.isGameOver = false;
 
     console.log("Creating card objects!");
 
     this.create_all_cards();
+  }
 
-    this.isGameOver = false;
+  onJoin (client, options) {
+    console.log(client.sessionId, "joined!");
+  }
+
+  onLeave (client, consented) {
+    console.log(client.sessionId, "left!");
+  }
+
+  onDispose() {
+    console.log("room", this.roomId, "disposing...");
   }
 
   // Create card objects for all players, weapons, and rooms
@@ -76,10 +90,10 @@ class Game {
 
     var shuffledCards = this.shuffle(allCards);
 
-    // Create client players
-    for(var ii = 0; ii < playerCount; ii++) {
+    // Create client players TODO
+    /*for(var ii = 0; ii < playerCount; ii++) {
       this.clientPlayers.push(new Player());
-    }
+    }*/
 
     // Deal cards
     var playerIdx = 0;
@@ -88,11 +102,10 @@ class Game {
         playerIdx = 0;
       }
 
-      this.clientPlayers[playerIdx].give_card(shuffledCards[ii]);
+      // TODO
+      //this.clientPlayers[playerIdx].give_card(shuffledCards[ii]);
       
       playerIdx++;
     }
   }
 }
-
-module.exports = Game;

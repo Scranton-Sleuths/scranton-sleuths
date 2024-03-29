@@ -2,8 +2,9 @@ const colyseus = require('colyseus');
 
 class Player {
 
-    constructor(){
+    constructor(name){
       this.cards = [];
+      this.name = name;
     }
 
     // Deal a card to this player
