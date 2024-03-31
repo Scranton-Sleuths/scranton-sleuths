@@ -1,10 +1,13 @@
 const colyseus = require('colyseus');
+const schema = require('@colyseus/schema');
 
-class Player {
+class Player extends schema.Schema{
 
     constructor(name){
+      super();
       this.cards = [];
       this.name = name;
+      this.test = "hellooooo";
     }
 
     // Deal a card to this player

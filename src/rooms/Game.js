@@ -31,10 +31,13 @@ exports.Game = class extends colyseus.Room {
 
   onJoin (client, options) {
     console.log(client.sessionId, "joined!");
+    const player = new Player("Bob");
+    this.state.clientPlayers.set(client.sessionId, player);
   }
 
   onLeave (client, consented) {
     console.log(client.sessionId, "left!");
+    this.state.clientPlayers.delete(client.sessionId);
   }
 
   onDispose() {

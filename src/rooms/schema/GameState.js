@@ -5,6 +5,7 @@ class GameState extends schema.Schema {
   constructor(){
     super();
     this.numPlayers = 6;
+    this.clientPlayers = new schema.MapSchema();
   }
 }
 
