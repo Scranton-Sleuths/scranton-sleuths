@@ -8,6 +8,7 @@ class Player extends schema.Schema{
       this.cards = [];
       this.name = name;
       this.test = "hellooooo";
+      this.currentRoom = "";
     }
 
     // Deal a card to this player

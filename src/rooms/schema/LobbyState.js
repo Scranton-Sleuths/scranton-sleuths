@@ -11,7 +11,8 @@ class LobbyState extends schema.Schema {
 }
 
 schema.defineTypes(Player, {
-    test: "string"
+    test: "string",
+    currentRoom: "string"
 });
 
 schema.defineTypes(LobbyState, {
