@@ -11,7 +11,7 @@ exports.Game = class extends colyseus.Room {
   weaponNames = ["Stapler", "Mug", "Scissors", "Dwight's Nunchucks", "Pencil", "Calculator"];
   roomNames = ["Conference Room", "Michael's Office", "Bathroom", "Kitchen", "Break Room", "Warehouse", "Annex", "Reception", "Jim's Office"];
 
-  onCreate() {
+  onCreate(options) {
 
     this.setState(new GameState());
 
@@ -20,6 +20,9 @@ exports.Game = class extends colyseus.Room {
     this.roomCards = [];
 
     this.totalCards = 6 + 6 + 9;
+
+    this.numPlayers = options.num_players;
+    this.currentNumPlayers = 0;
     this.clientPlayers = new MapSchema(); // Consider using MapSchema, which is part of Colyseus, to store the clients https://docs.colyseus.io/state/schema/#mapschema
 
     this.isGameOver = false;
@@ -33,6 +36,13 @@ exports.Game = class extends colyseus.Room {
     console.log(client.sessionId, "joined!");
     const player = new Player("Bob");
     this.state.clientPlayers.set(client.sessionId, player);
+
+    this.currentNumPlayers += 1;
+
+    if( this.numPlayers == this.currentNumPlayers )
+    {
+      this.init();
+    }
   }
 
   onLeave (client, consented) {
@@ -71,7 +81,7 @@ exports.Game = class extends colyseus.Room {
   }
 
   // Initialize the game, deal cards
-  init(playerCount) {
+  init() {
     console.log("Starting Init!");
 
     // Choose answer cards
@@ -93,20 +103,20 @@ exports.Game = class extends colyseus.Room {
 
     var shuffledCards = this.shuffle(allCards);
 
-    // Create client players TODO
-    /*for(var ii = 0; ii < playerCount; ii++) {
-      this.clientPlayers.push(new Player());
-    }*/
+    var ids = [];
+    // Get Player Ids
+    this.state.clientPlayers.forEach((value, key) => {
+      ids.push(key);
+    });
 
     // Deal cards
     var playerIdx = 0;
     for(var ii = 0; ii < this.totalCards - 3; ii++) {
-      if(playerIdx == 4) {
+      if(playerIdx == this.numPlayers) {
         playerIdx = 0;
       }
 
-      // TODO
-      //this.clientPlayers[playerIdx].give_card(shuffledCards[ii]);
+      this.state.clientPlayers.get(ids[playerIdx]).give_card(shuffledCards[ii]);
       
       playerIdx++;
     }
