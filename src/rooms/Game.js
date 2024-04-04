@@ -30,6 +30,13 @@ exports.Game = class extends colyseus.Room {
     console.log("Creating card objects!");
 
     this.create_all_cards();
+
+    // TODO: Add all the onMessage functions here, like when a player clicks on a room. Ex:
+    /*     
+      this.onMessage("move", (client, message) => {
+        processMove(client, message);
+    }); 
+    */
   }
 
   onJoin (client, options) {
@@ -52,6 +59,17 @@ exports.Game = class extends colyseus.Room {
 
   onDispose() {
     console.log("room", this.roomId, "disposing...");
+  }
+
+  // TODO: Process a move request by a player
+  processMove(client, room) {
+    // See if it is possible for the client to move to the room
+    // If it is, update that client's position IN THE STATE
+
+    const player = this.state.clientPlayers.get(client.sessionId);
+    // if valid move:
+    player.currentRoom = room; // This line correctly updates the player in the state
+    // The client will automatically see this change
   }
 
   // Create card objects for all players, weapons, and rooms
