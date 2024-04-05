@@ -21,7 +21,7 @@ exports.Game = class extends colyseus.Room {
 
     this.totalCards = 6 + 6 + 9;
 
-    this.numPlayers = options.num_players;
+    this.numPlayers = 0;
     this.currentNumPlayers = 0;
     this.clientPlayers = new MapSchema(); // Consider using MapSchema, which is part of Colyseus, to store the clients https://docs.colyseus.io/state/schema/#mapschema
 
@@ -37,6 +37,13 @@ exports.Game = class extends colyseus.Room {
         processMove(client, message);
     }); 
     */
+
+    this.onMessage("startGame", (client, message) => {
+      this.numPlayers = message;
+      console.log("Initializing a game for " + message + " players!");
+      this.init();
+    });
+    
   }
 
   onJoin (client, options) {
@@ -45,11 +52,6 @@ exports.Game = class extends colyseus.Room {
     this.state.clientPlayers.set(client.sessionId, player);
 
     this.currentNumPlayers += 1;
-
-    if( this.numPlayers == this.currentNumPlayers )
-    {
-      this.init();
-    }
   }
 
   onLeave (client, consented) {
