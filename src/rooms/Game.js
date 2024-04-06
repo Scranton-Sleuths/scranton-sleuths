@@ -23,7 +23,6 @@ exports.Game = class extends colyseus.Room {
 
     this.numPlayers = 0;
     this.currentNumPlayers = 0;
-    this.clientPlayers = new MapSchema(); // Consider using MapSchema, which is part of Colyseus, to store the clients https://docs.colyseus.io/state/schema/#mapschema
 
     this.isGameOver = false;
 
