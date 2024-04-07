@@ -69,7 +69,7 @@ exports.Game = class extends colyseus.Room {
 
     const player = this.state.clientPlayers.get(client.sessionId);
     // if valid move:
-    player.currentRoom = room; // This line correctly updates the player in the state
+    player.currentLocation = room; // This line correctly updates the player in the state
     // The client will automatically see this change
   }
 
