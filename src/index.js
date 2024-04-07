@@ -1,6 +1,7 @@
 // Import rooms
-const { MyRoom } = require("./rooms/MyRoom");
 const { Lobby } = require("./rooms/Lobby");
+const { Game } = require("./rooms/Game");
+
 
 // Server stuff
 const express = require("express");
@@ -21,8 +22,8 @@ const gameServer = new core.Server({
 });
 
 // Define rooms
-gameServer.define('my_room', MyRoom);
 gameServer.define('lobby', Lobby);
+gameServer.define('game', Game);
 
 // Opens server
 gameServer.listen(process.env.PORT || 3000)
