@@ -4,12 +4,17 @@ var Card = require("../game/Card");
 var Player = require("../game/Player");
 const { GameState } = require('./schema/GameState');
 const MapSchema = schema.MapSchema;
+var Location = require('../game/Location');
 
 exports.Game = class extends colyseus.Room {
 
   playerNames = ["Michael Scott", "Dwight Schrutte", "Jim Halpert", "Pam Beesly", "Angela Martin", "Andy Bernard"];
   weaponNames = ["Stapler", "Mug", "Scissors", "Dwight's Nunchucks", "Pencil", "Calculator"];
   roomNames = ["Conference Room", "Michael's Office", "Bathroom", "Kitchen", "Break Room", "Warehouse", "Annex", "Reception", "Jim's Office"];
+
+  randomNumber(min, max) {
+    return Math.floor(Math.random() * (max - min) + min);
+  }
 
   onCreate(options) {
 
@@ -30,24 +35,35 @@ exports.Game = class extends colyseus.Room {
 
     this.create_all_cards();
 
+    // Create the locations
+
+    // Creat rooms
+    this.roomNames.forEach(room => {
+        const location = new Location(this.randomNumber(20,500), this.randomNumber(20,500), room, "room", "");
+        this.state.board.set(room, location);
+    });
+
+    // TODO: Create hallways
+
     // TODO: Add all the onMessage functions here, like when a player clicks on a room. Ex:
-    /*     
-      this.onMessage("move", (client, message) => {
-        processMove(client, message);
+        
+    this.onMessage("move", (client, message) => {
+      this.processMove(client, message);
     }); 
-    */
+    
 
     this.onMessage("startGame", (client, message) => {
       this.numPlayers = message;
       console.log("Initializing a game for " + message + " players!");
       this.init();
+      this.broadcast("drawboard", "", {except: client}); // Let all other clients know to draw the board
     });
     
   }
 
   onJoin (client, options) {
     console.log(client.sessionId, "joined!");
-    const player = new Player("Bob");
+    const player = new Player(client.sessionId); // Change sessionId to the player name, just doing this for testing
     this.state.clientPlayers.set(client.sessionId, player);
 
     this.currentNumPlayers += 1;
@@ -64,6 +80,7 @@ exports.Game = class extends colyseus.Room {
 
   // TODO: Process a move request by a player
   processMove(client, room) {
+    console.log("Move message from", client.sessionId, room);
     // See if it is possible for the client to move to the room
     // If it is, update that client's position IN THE STATE
 
