@@ -12,7 +12,17 @@ exports.Game = class extends colyseus.Room {
   weaponNames = ["Stapler", "Mug", "Scissors", "Dwight's Nunchucks", "Pencil", "Calculator"];
   roomNames = ["Conference Room", "Michael's Office", "Bathroom", "Kitchen", "Break Room", "Warehouse", "Annex", "Reception", "Jim's Office"];
   roomXY = ["10,100", "300,100", "600,100", "10,275", "300,275", "600,275", "10,450", "300,450", "600,450"];
-  playerStart = ["450,100", "10,188", "450,188", "10,363", "188,450", "450,450"]
+  playerStart = ["450,70", "10,208", "550,208", "10,383", "168,470", "430,470"]
+  hallways = ["Conference Room_Michael's Office", "Michael's Office_Bathroom",
+    "Conference Room_Kitchen", "Michael's Office_Break Room", "Bathroom_Warehouse",
+    "Kitchen_Break Room", "Break Room_Warehouse",
+    "Kitchen_Annex", "Break Room_Reception", "Warehouse_Jim's Office",
+    "Annex_Reception", "Reception_Jim's Office"];
+  hallwayXY = ["205,100", "500,100",
+    "10,188", "300,188", "600,188",
+    "155,275", "450,275",
+    "10,363", "300,363", "600,363",
+    "155,450", "450,450"]
 
   randomNumber(min, max) {
     return Math.floor(Math.random() * (max - min) + min);
@@ -47,11 +57,17 @@ exports.Game = class extends colyseus.Room {
     for (let index = 0; index < this.roomNames.length; index++) {
         let x = parseInt(this.roomXY[index].split(',')[0]);
         let y = parseInt(this.roomXY[index].split(',')[1]);
-        const location = new Location(x, y, this.roomNames[index], "room", "");
+        const location = new Location(x, y, this.roomNames[index], "room", ""); // TODO: Make an array of adjacent locations so we can add it here
         this.state.board.set(this.roomNames[index], location);
     }
 
-    // TODO: Create hallways
+    //Create hallways
+    for (let index = 0; index < this.hallways.length; index++) {
+        let x = parseInt(this.hallwayXY[index].split(',')[0]);
+        let y = parseInt(this.hallwayXY[index].split(',')[1]);
+        const location = new Location(x, y, this.hallways[index], "hallway", ""); // TODO: Make an array of adjacent locations so we can add it here
+        this.state.board.set(this.hallways[index], location);
+    }
 
     // TODO: Add all the onMessage functions here, like when a player clicks on a room. Ex:
         
