@@ -4,12 +4,29 @@ var Card = require("../game/Card");
 var Player = require("../game/Player");
 const { GameState } = require('./schema/GameState');
 const MapSchema = schema.MapSchema;
+var Location = require('../game/Location');
 
 exports.Game = class extends colyseus.Room {
 
   playerNames = ["Michael Scott", "Dwight Schrutte", "Jim Halpert", "Pam Beesly", "Angela Martin", "Andy Bernard"];
   weaponNames = ["Stapler", "Mug", "Scissors", "Dwight's Nunchucks", "Pencil", "Calculator"];
   roomNames = ["Conference Room", "Michael's Office", "Bathroom", "Kitchen", "Break Room", "Warehouse", "Annex", "Reception", "Jim's Office"];
+  roomXY = ["10,100", "300,100", "600,100", "10,275", "300,275", "600,275", "10,450", "300,450", "600,450"];
+  playerStart = ["450,70", "10,208", "550,208", "10,383", "168,470", "430,470"]
+  hallways = ["Conference Room_Michael's Office", "Michael's Office_Bathroom",
+    "Conference Room_Kitchen", "Michael's Office_Break Room", "Bathroom_Warehouse",
+    "Kitchen_Break Room", "Break Room_Warehouse",
+    "Kitchen_Annex", "Break Room_Reception", "Warehouse_Jim's Office",
+    "Annex_Reception", "Reception_Jim's Office"];
+  hallwayXY = ["205,100", "500,100",
+    "10,188", "300,188", "600,188",
+    "155,275", "450,275",
+    "10,363", "300,363", "600,363",
+    "155,450", "450,450"]
+
+  randomNumber(min, max) {
+    return Math.floor(Math.random() * (max - min) + min);
+  }
 
   onCreate(options) {
 
@@ -30,24 +47,49 @@ exports.Game = class extends colyseus.Room {
 
     this.create_all_cards();
 
+    // Create the locations
+
+    // Creat rooms
+    // this.roomNames.forEach(room => {
+    //     const location = new Location(this.randomNumber(20,500), this.randomNumber(20,500), room, "room", "");
+    //     this.state.board.set(room, location);
+    // });
+    for (let index = 0; index < this.roomNames.length; index++) {
+        let x = parseInt(this.roomXY[index].split(',')[0]);
+        let y = parseInt(this.roomXY[index].split(',')[1]);
+        const location = new Location(x, y, this.roomNames[index], "room", ""); // TODO: Make an array of adjacent locations so we can add it here
+        this.state.board.set(this.roomNames[index], location);
+    }
+
+    //Create hallways
+    for (let index = 0; index < this.hallways.length; index++) {
+        let x = parseInt(this.hallwayXY[index].split(',')[0]);
+        let y = parseInt(this.hallwayXY[index].split(',')[1]);
+        const location = new Location(x, y, this.hallways[index], "hallway", ""); // TODO: Make an array of adjacent locations so we can add it here
+        this.state.board.set(this.hallways[index], location);
+    }
+
     // TODO: Add all the onMessage functions here, like when a player clicks on a room. Ex:
-    /*     
-      this.onMessage("move", (client, message) => {
-        processMove(client, message);
+        
+    this.onMessage("move", (client, message) => {
+      this.processMove(client, message);
     }); 
-    */
+    
 
     this.onMessage("startGame", (client, message) => {
       this.numPlayers = message;
       console.log("Initializing a game for " + message + " players!");
       this.init();
+      this.broadcast("drawboard", "", {except: client}); // Let all other clients know to draw the board
     });
     
   }
 
   onJoin (client, options) {
     console.log(client.sessionId, "joined!");
-    const player = new Player("Bob");
+    let x = parseInt(this.playerStart[this.currentNumPlayers].split(',')[0]);
+    let y = parseInt(this.playerStart[this.currentNumPlayers].split(',')[1]);
+    const player = new Player(this.playerNames[this.currentNumPlayers], x, y);
     this.state.clientPlayers.set(client.sessionId, player);
 
     this.currentNumPlayers += 1;
@@ -64,6 +106,7 @@ exports.Game = class extends colyseus.Room {
 
   // TODO: Process a move request by a player
   processMove(client, room) {
+    console.log("Move message from", client.sessionId, room);
     // See if it is possible for the client to move to the room
     // If it is, update that client's position IN THE STATE
 

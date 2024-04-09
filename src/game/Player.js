@@ -3,12 +3,14 @@ const schema = require('@colyseus/schema');
 
 class Player extends schema.Schema{
 
-    constructor(name){
+    constructor(name, x, y){
       super();
       this.cards = [];
       this.name = name;
       this.test = "hellooooo";
       this.currentLocation = "";
+      this.startX = x;
+      this.startY = y;
     }
 
     // Deal a card to this player
