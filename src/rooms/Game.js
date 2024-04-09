@@ -11,6 +11,8 @@ exports.Game = class extends colyseus.Room {
   playerNames = ["Michael Scott", "Dwight Schrutte", "Jim Halpert", "Pam Beesly", "Angela Martin", "Andy Bernard"];
   weaponNames = ["Stapler", "Mug", "Scissors", "Dwight's Nunchucks", "Pencil", "Calculator"];
   roomNames = ["Conference Room", "Michael's Office", "Bathroom", "Kitchen", "Break Room", "Warehouse", "Annex", "Reception", "Jim's Office"];
+  roomXY = ["10,100", "300,100", "600,100", "10,275", "300,275", "600,275", "10,450", "300,450", "600,450"];
+  playerStart = ["450,100", "10,188", "450,188", "10,363", "188,450", "450,450"]
 
   randomNumber(min, max) {
     return Math.floor(Math.random() * (max - min) + min);
@@ -38,10 +40,16 @@ exports.Game = class extends colyseus.Room {
     // Create the locations
 
     // Creat rooms
-    this.roomNames.forEach(room => {
-        const location = new Location(this.randomNumber(20,500), this.randomNumber(20,500), room, "room", "");
-        this.state.board.set(room, location);
-    });
+    // this.roomNames.forEach(room => {
+    //     const location = new Location(this.randomNumber(20,500), this.randomNumber(20,500), room, "room", "");
+    //     this.state.board.set(room, location);
+    // });
+    for (let index = 0; index < this.roomNames.length; index++) {
+        let x = parseInt(this.roomXY[index].split(',')[0]);
+        let y = parseInt(this.roomXY[index].split(',')[1]);
+        const location = new Location(x, y, this.roomNames[index], "room", "");
+        this.state.board.set(this.roomNames[index], location);
+    }
 
     // TODO: Create hallways
 
@@ -63,7 +71,9 @@ exports.Game = class extends colyseus.Room {
 
   onJoin (client, options) {
     console.log(client.sessionId, "joined!");
-    const player = new Player(client.sessionId); // Change sessionId to the player name, just doing this for testing
+    let x = parseInt(this.playerStart[this.currentNumPlayers].split(',')[0]);
+    let y = parseInt(this.playerStart[this.currentNumPlayers].split(',')[1]);
+    const player = new Player(this.playerNames[this.currentNumPlayers], x, y);
     this.state.clientPlayers.set(client.sessionId, player);
 
     this.currentNumPlayers += 1;
