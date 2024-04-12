@@ -11,6 +11,7 @@ class Player extends schema.Schema{
       this.currentLocation = "";
       this.startX = x;
       this.startY = y;
+      this.isActive = true;
     }
 
     // Deal a card to this player

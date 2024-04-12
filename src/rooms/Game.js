@@ -83,6 +83,10 @@ exports.Game = class extends colyseus.Room {
       this.broadcast("drawboard", "", {except: client}); // Let all other clients know to draw the board
     });
     
+    this.onMessage("accusation", (client, message) => {
+      console.log("Accusation received!");
+      this.processAccusation(client, message);
+    });
   }
 
   onJoin (client, options) {
@@ -114,6 +118,29 @@ exports.Game = class extends colyseus.Room {
     // if valid move:
     player.currentLocation = room; // This line correctly updates the player in the state
     // The client will automatically see this change
+  }
+
+  processAccusation(client, accusation) {
+    const player = this.state.clientPlayers.get(client.sessionId);
+    console.log("Accusation from", player.name);
+    console.log("Person:",accusation.person, "Place:", accusation.place, "Weapon:", accusation.weapon);
+    //console.log("correct answer is");
+    //console.log("Person:",this.answerPlayer, "Place:", this.answerRoom, "Weapon:", this.answerWeapon);
+    if (accusation.person == this.answerPlayer.name && accusation.place == this.answerRoom.name && accusation.weapon == this.answerWeapon.name) {
+      console.log("Accusation is Correct!");
+      this.isGameOver = true;
+      this.broadcast("correctAccusation", accusation); // Let everyone know that the player guessed correctly.
+    }
+    else {
+      console.log("Accusation is incorrect.", player.name, "has been eliminated from the game.");
+      let correctAccusation = {
+        person: this.answerPlayer.name,
+        place: this.answerRoom.name,
+        weapon: this.answerWeapon.name
+      };
+      player.isActive = false;
+      client.send("wrongAccusation", correctAccusation);
+    }
   }
 
   // Create card objects for all players, weapons, and rooms
@@ -182,5 +209,6 @@ exports.Game = class extends colyseus.Room {
       
       playerIdx++;
     }
+    this.state.clientPlayers.forEach((player) => { console.log(player.name); console.log(player.cards)})
   }
 }
