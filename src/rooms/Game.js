@@ -132,11 +132,7 @@ exports.Game = class extends colyseus.Room {
     // If the player chooses a room that has the current room name in it,
     // Then we can make the move
     else{
-      // If they are in a room, then they can only move to a hallway with
-      // That room name in it
       if(player.currentLocation.includes("_")){
-        // const roomOption = player.currentLocation.split("_");
-        // console.log(roomOption);
         if(player.currentLocation.includes(room)){
           player.currentLocation = room;
         }
@@ -146,18 +142,10 @@ exports.Game = class extends colyseus.Room {
           player.currentLocation = room;
         }
       }
-
-      // If they are in a hallway, they can only move to the rooms in
-      // The hallway name
-      //player.currentLocation = room;
     }
-
-
-    // Current location before move
-    console.log(player.currentLocation);
   
-    // if valid move:
-    //player.currentLocation = room; // This line correctly updates the player in the state
+    // If valid move:
+    // player.currentLocation = room; // This line correctly updates the player in the state
     // The client will automatically see this change
   }
 
