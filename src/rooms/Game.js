@@ -111,8 +111,53 @@ exports.Game = class extends colyseus.Room {
     // If it is, update that client's position IN THE STATE
 
     const player = this.state.clientPlayers.get(client.sessionId);
+    
+    // Initial player move
+    if (player.currentLocation === "") {
+      const firstMoveLocations = {
+        "Michael Scott": "Michael's Office_Bathroom",
+        "Dwight Schrutte": "Conference Room_Kitchen",
+        "Jim Halpert": "Bathroom_Warehouse",
+        "Pam Beesly": "Kitchen_Annex",
+        "Angela Martin": "Annex_Reception",
+        "Andy Bernard": "Reception_Jim's Office"
+      }
+      const requiredRoom = firstMoveLocations[player.name];
+      if (requiredRoom === room) {
+          player.currentLocation = room;
+      } 
+    }
+
+
+    // If the player chooses a room that has the current room name in it,
+    // Then we can make the move
+    else{
+      // If they are in a room, then they can only move to a hallway with
+      // That room name in it
+      if(player.currentLocation.includes("_")){
+        // const roomOption = player.currentLocation.split("_");
+        // console.log(roomOption);
+        if(player.currentLocation.includes(room)){
+          player.currentLocation = room;
+        }
+      }
+      else{
+        if(room.includes(player.currentLocation)){
+          player.currentLocation = room;
+        }
+      }
+
+      // If they are in a hallway, they can only move to the rooms in
+      // The hallway name
+      //player.currentLocation = room;
+    }
+
+
+    // Current location before move
+    console.log(player.currentLocation);
+  
     // if valid move:
-    player.currentLocation = room; // This line correctly updates the player in the state
+    //player.currentLocation = room; // This line correctly updates the player in the state
     // The client will automatically see this change
   }
 
