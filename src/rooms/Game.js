@@ -202,10 +202,23 @@ exports.Game = class extends colyseus.Room {
         playerIdx = 0;
       }
 
-      this.state.clientPlayers.get(ids[playerIdx]).cards.push(shuffledCards[ii]);
+      this.state.clientPlayers.get(ids[playerIdx]).give_card(shuffledCards[ii]);
       
       playerIdx++;
     }
+
+    // Send cards to client
+    this.clients.forEach((client) => {
+      var curr_player = this.state.clientPlayers.get(client.sessionId);
+
+      var js_card_array = [];
+      curr_player.cards.forEach((card) => {
+        js_card_array.push(card.name);
+      });
+
+      var card_json = JSON.stringify({ ...js_card_array })
+      client.send("dealCards", card_json);
+    });
 
     // Randomize turn order
     this.randomize_turn_order();
