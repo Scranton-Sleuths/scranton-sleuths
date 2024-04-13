@@ -40,6 +40,7 @@ exports.Game = class extends colyseus.Room {
 
     this.numPlayers = 0;
     this.currentNumPlayers = 0;
+    this.turnOrder = [];
 
     this.isGameOver = false;
 
@@ -94,6 +95,12 @@ exports.Game = class extends colyseus.Room {
     let x = parseInt(this.playerStart[this.currentNumPlayers].split(',')[0]);
     let y = parseInt(this.playerStart[this.currentNumPlayers].split(',')[1]);
     const player = new Player(this.playerNames[this.currentNumPlayers], x, y);
+
+    // Michael scott should be the first player to go.
+    if(this.playerNames[this.currentNumPlayers] == "Michael Scott") {
+      this.turnOrder.push(client.sessionId);
+    }
+    
     this.state.clientPlayers.set(client.sessionId, player);
 
     this.currentNumPlayers += 1;
@@ -189,18 +196,35 @@ exports.Game = class extends colyseus.Room {
     }
   }
 
-  // Shuffle an array of cards
-  shuffle(cards) {
-    var shuffledCards = [];
+  // Shuffle an array
+  shuffle(arr) {
+    var shuffledArr = [];
 
-    for(var ii = cards.length - 1; ii >= 0; ii--) {
+    for(var ii = arr.length - 1; ii >= 0; ii--) {
       var idx = Math.floor(Math.random() * (ii + 1));
-
-      shuffledCards[ii] = cards[idx];
-      cards.splice(idx, 1);
+      shuffledArr[ii] = arr[idx];
+      arr.splice(idx, 1);
     }
 
-    return shuffledCards;
+    return shuffledArr;
+  }
+
+  // Randomize the turn order for Players
+  randomize_turn_order() {
+    var unshuffled_turns = []
+
+    this.state.clientPlayers.forEach((value, key) => {
+      if(value.name != "Michael Scott") {
+        unshuffled_turns.push(key);
+      }
+    });
+
+    var shuffled_turns = this.shuffle(unshuffled_turns);
+
+    for(var ii = 0; ii < this.numPlayers - 1; ii++)
+    {
+      this.turnOrder.push(shuffled_turns[ii]);
+    }
   }
 
   // Initialize the game, deal cards
@@ -243,6 +267,23 @@ exports.Game = class extends colyseus.Room {
       
       playerIdx++;
     }
+
     this.state.clientPlayers.forEach((player) => { console.log(player.name); console.log(player.cards)})
+
+    // Send cards to client
+    this.clients.forEach((client) => {
+      var curr_player = this.state.clientPlayers.get(client.sessionId);
+
+      var js_card_array = [];
+      curr_player.cards.forEach((card) => {
+        js_card_array.push(card.name);
+      });
+
+      var card_json = JSON.stringify({ ...js_card_array })
+      client.send("dealCards", card_json);
+    });
+
+    // Randomize turn order
+    this.randomize_turn_order();
   }
 }
