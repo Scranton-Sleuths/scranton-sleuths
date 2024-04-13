@@ -80,7 +80,7 @@ exports.Game = class extends colyseus.Room {
       this.numPlayers = message;
       console.log("Initializing a game for " + message + " players!");
       this.init();
-      this.broadcast("drawboard", "", {except: client}); // Let all other clients know to draw the board
+      this.broadcast("drawboard", ""); // Let all other clients know to draw the board
     });
     
     this.onMessage("accusation", (client, message) => {
@@ -126,18 +126,19 @@ exports.Game = class extends colyseus.Room {
     console.log("Person:",accusation.person, "Place:", accusation.place, "Weapon:", accusation.weapon);
     //console.log("correct answer is");
     //console.log("Person:",this.answerPlayer, "Place:", this.answerRoom, "Weapon:", this.answerWeapon);
+    let correctAccusation = {
+      accuser: player.name,
+      person: this.answerPlayer.name,
+      place: this.answerRoom.name,
+      weapon: this.answerWeapon.name
+    };
     if (accusation.person == this.answerPlayer.name && accusation.place == this.answerRoom.name && accusation.weapon == this.answerWeapon.name) {
       console.log("Accusation is Correct!");
       this.isGameOver = true;
-      this.broadcast("correctAccusation", accusation); // Let everyone know that the player guessed correctly.
+      this.broadcast("correctAccusation", correctAccusation); // Let everyone know that the player guessed correctly.
     }
     else {
       console.log("Accusation is incorrect.", player.name, "has been eliminated from the game.");
-      let correctAccusation = {
-        person: this.answerPlayer.name,
-        place: this.answerRoom.name,
-        weapon: this.answerWeapon.name
-      };
       player.isActive = false;
       client.send("wrongAccusation", correctAccusation);
     }
