@@ -81,9 +81,13 @@ exports.Game = class extends colyseus.Room {
       this.numPlayers = message;
       console.log("Initializing a game for " + message + " players!");
       this.init();
-      this.broadcast("drawboard", "", {except: client}); // Let all other clients know to draw the board
+      this.broadcast("drawboard", ""); // Let all other clients know to draw the board
     });
     
+    this.onMessage("accusation", (client, message) => {
+      console.log("Accusation received!");
+      this.processAccusation(client, message);
+    });
   }
 
   onJoin (client, options) {
@@ -118,9 +122,66 @@ exports.Game = class extends colyseus.Room {
     // If it is, update that client's position IN THE STATE
 
     const player = this.state.clientPlayers.get(client.sessionId);
-    // if valid move:
-    player.currentLocation = room; // This line correctly updates the player in the state
+    
+    // Initial player move
+    if (player.currentLocation === "") {
+      const firstMoveLocations = {
+        "Michael Scott": "Michael's Office_Bathroom",
+        "Dwight Schrutte": "Conference Room_Kitchen",
+        "Jim Halpert": "Bathroom_Warehouse",
+        "Pam Beesly": "Kitchen_Annex",
+        "Angela Martin": "Annex_Reception",
+        "Andy Bernard": "Reception_Jim's Office"
+      }
+      const requiredRoom = firstMoveLocations[player.name];
+      if (requiredRoom === room) {
+          player.currentLocation = room;
+      } 
+    }
+
+
+    // If the player chooses a room that has the current room name in it,
+    // Then we can make the move
+    else{
+      if(player.currentLocation.includes("_")){
+        if(player.currentLocation.includes(room)){
+          player.currentLocation = room;
+        }
+      }
+      else{
+        if(room.includes(player.currentLocation)){
+          player.currentLocation = room;
+        }
+      }
+    }
+  
+    // If valid move:
+    // player.currentLocation = room; // This line correctly updates the player in the state
     // The client will automatically see this change
+  }
+
+  processAccusation(client, accusation) {
+    const player = this.state.clientPlayers.get(client.sessionId);
+    console.log("Accusation from", player.name);
+    console.log("Person:",accusation.person, "Place:", accusation.place, "Weapon:", accusation.weapon);
+    //console.log("correct answer is");
+    //console.log("Person:",this.answerPlayer, "Place:", this.answerRoom, "Weapon:", this.answerWeapon);
+    let correctAccusation = {
+      accuser: player.name,
+      person: this.answerPlayer.name,
+      place: this.answerRoom.name,
+      weapon: this.answerWeapon.name
+    };
+    if (accusation.person == this.answerPlayer.name && accusation.place == this.answerRoom.name && accusation.weapon == this.answerWeapon.name) {
+      console.log("Accusation is Correct!");
+      this.isGameOver = true;
+      this.broadcast("correctAccusation", correctAccusation); // Let everyone know that the player guessed correctly.
+    }
+    else {
+      console.log("Accusation is incorrect.", player.name, "has been eliminated from the game.");
+      player.isActive = false;
+      client.send("wrongAccusation", correctAccusation);
+    }
   }
 
   // Create card objects for all players, weapons, and rooms
@@ -206,6 +267,8 @@ exports.Game = class extends colyseus.Room {
       
       playerIdx++;
     }
+
+    this.state.clientPlayers.forEach((player) => { console.log(player.name); console.log(player.cards)})
 
     // Send cards to client
     this.clients.forEach((client) => {
