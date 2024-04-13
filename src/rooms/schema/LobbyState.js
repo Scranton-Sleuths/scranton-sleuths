@@ -1,5 +1,6 @@
 const schema = require('@colyseus/schema');
 var Player = require('../../game/Player');
+var Card = require('../../game/Card');
 
 class LobbyState extends schema.Schema {
   constructor(){
@@ -15,8 +16,14 @@ schema.defineTypes(Player, {
     currentLocation: "string",
     name: "string",
     startX: "number",
-    startY: "number"
+    startY: "number",
+    cards: [Card]
 });
+
+schema.defineTypes(Card, {
+    type: "string",
+    name: "string"
+})
 
 schema.defineTypes(LobbyState, {
     roomName: "string",

@@ -202,7 +202,7 @@ exports.Game = class extends colyseus.Room {
         playerIdx = 0;
       }
 
-      this.state.clientPlayers.get(ids[playerIdx]).give_card(shuffledCards[ii]);
+      this.state.clientPlayers.get(ids[playerIdx]).cards.push(shuffledCards[ii]);
       
       playerIdx++;
     }
