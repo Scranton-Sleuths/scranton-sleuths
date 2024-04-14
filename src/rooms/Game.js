@@ -41,6 +41,8 @@ exports.Game = class extends colyseus.Room {
     this.numPlayers = 0;
     this.currentNumPlayers = 0;
     this.turnOrder = [];
+    this.currentTurnPlayer = 0;
+    this.movedOnTurn = false;
 
     this.isGameOver = false;
 
@@ -83,6 +85,13 @@ exports.Game = class extends colyseus.Room {
       this.init();
       this.broadcast("drawboard", ""); // Let all other clients know to draw the board
     });
+
+    this.onMessage("endTurn", (client, message) => {
+      if (client.sessionId == this.turnOrder[this.currentTurnPlayer]) {
+        // this player ended their turn
+        this.startNextTurn();
+      }
+    });
     
     this.onMessage("accusation", (client, message) => {
       console.log("Accusation received!");
@@ -115,8 +124,27 @@ exports.Game = class extends colyseus.Room {
     console.log("room", this.roomId, "disposing...");
   }
 
+  startNextTurn() {
+    let sessionId;
+    // find the next player in the turn order that's still active
+    do {
+      this.currentTurnPlayer = (this.currentTurnPlayer + 1) % this.numPlayers;
+      sessionId = this.turnOrder[this.currentTurnPlayer];
+    } while (!this.state.clientPlayers[sessionId].isActive);
+    
+    let message = {id: sessionId, name: this.state.clientPlayers[sessionId].name}
+    this.broadcast("newTurn", message); 
+    this.movedOnTurn = false;
+  }
+
   // TODO: Process a move request by a player
   processMove(client, room) {
+    if (client.sessionId != this.turnOrder[this.currentTurnPlayer]) {
+      return; // it's not their turn!
+    }
+    else if (this.movedOnTurn == true) {
+      return; // they already moved!
+    }
     console.log("Move message from", client.sessionId, room);
     // See if it is possible for the client to move to the room
     // If it is, update that client's position IN THE STATE
@@ -136,6 +164,7 @@ exports.Game = class extends colyseus.Room {
       const requiredRoom = firstMoveLocations[player.name];
       if (requiredRoom === room) {
           player.currentLocation = room;
+          this.movedOnTurn = true;
       } 
     }
 
@@ -146,11 +175,13 @@ exports.Game = class extends colyseus.Room {
       if(player.currentLocation.includes("_")){
         if(player.currentLocation.includes(room)){
           player.currentLocation = room;
+          this.movedOnTurn = true;
         }
       }
       else{
         if(room.includes(player.currentLocation)){
           player.currentLocation = room;
+          this.movedOnTurn = true;
         }
       }
     }
@@ -161,6 +192,10 @@ exports.Game = class extends colyseus.Room {
   }
 
   processAccusation(client, accusation) {
+    if (client.sessionId != this.turnOrder[this.currentTurnPlayer]) {
+      return; // it's not their turn!
+    }
+
     const player = this.state.clientPlayers.get(client.sessionId);
     console.log("Accusation from", player.name);
     console.log("Person:",accusation.person, "Place:", accusation.place, "Weapon:", accusation.weapon);
@@ -216,7 +251,7 @@ exports.Game = class extends colyseus.Room {
     this.state.clientPlayers.forEach((value, key) => {
       if(value.name != "Michael Scott") {
         unshuffled_turns.push(key);
-      }
+      } 
     });
 
     var shuffled_turns = this.shuffle(unshuffled_turns);
@@ -225,6 +260,9 @@ exports.Game = class extends colyseus.Room {
     {
       this.turnOrder.push(shuffled_turns[ii]);
     }
+
+    this.currentTurnPlayer = this.numPlayers - 1;
+    this.startNextTurn(); 
   }
 
   // Initialize the game, deal cards
