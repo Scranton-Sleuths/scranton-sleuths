@@ -202,6 +202,7 @@ exports.Game = class extends colyseus.Room {
     //console.log("correct answer is");
     //console.log("Person:",this.answerPlayer, "Place:", this.answerRoom, "Weapon:", this.answerWeapon);
     let correctAccusation = {
+      id: client.sessionId,
       accuser: player.name,
       person: this.answerPlayer.name,
       place: this.answerRoom.name,
