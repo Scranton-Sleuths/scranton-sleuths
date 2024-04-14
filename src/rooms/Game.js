@@ -88,6 +88,11 @@ exports.Game = class extends colyseus.Room {
       console.log("Accusation received!");
       this.processAccusation(client, message);
     });
+
+    this.onMessage("suggestion", (client, message) => {
+      console.log("Suggestion received!");
+      this.processSuggestion(client, message);
+    });
   }
 
   onJoin (client, options) {
@@ -121,8 +126,9 @@ exports.Game = class extends colyseus.Room {
     // See if it is possible for the client to move to the room
     // If it is, update that client's position IN THE STATE
 
+    // TODO: Check if it is the players turn
     const player = this.state.clientPlayers.get(client.sessionId);
-    
+
     // Initial player move
     if (player.currentLocation === "") {
       const firstMoveLocations = {
@@ -143,12 +149,15 @@ exports.Game = class extends colyseus.Room {
     // If the player chooses a room that has the current room name in it,
     // Then we can make the move
     else{
+      // Hallway to room
       if(player.currentLocation.includes("_")){
         if(player.currentLocation.includes(room)){
           player.currentLocation = room;
         }
       }
       else{
+        // Room to hallway
+        // TODO Check if hallway has a player in it.
         if(room.includes(player.currentLocation)){
           player.currentLocation = room;
         }
@@ -182,6 +191,38 @@ exports.Game = class extends colyseus.Room {
       player.isActive = false;
       client.send("wrongAccusation", correctAccusation);
     }
+  }
+
+  processSuggestion(client, suggestion){
+    // TODO If it is the current players turn
+
+    const player = this.state.clientPlayers.get(client.sessionId);
+    
+
+    if(!player.currentLocation.includes("_") && player.currentLocation === suggestion.place && player.name != suggestion.person){
+      const suggestionMade = {
+        accuser: player.name,
+        person: suggestion.person,
+        place: suggestion.place,
+        weapon: suggestion.weapon
+      }
+      let suggestedPlayer;
+      for (const playerObj of this.state.clientPlayers.values()) {
+        if (playerObj.name === suggestion.person) {
+            suggestedPlayer = playerObj;
+        }
+      }
+
+      if(suggestedPlayer){
+        this.broadcast("suggestionMade", suggestionMade); 
+        suggestedPlayer.currentLocation = player.currentLocation;
+      }
+  }
+
+    // TODO:
+    // Go around and ask players if they have a card to show to prove 
+    // Suggestion wrong
+
   }
 
   // Create card objects for all players, weapons, and rooms
