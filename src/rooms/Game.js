@@ -157,6 +157,14 @@ exports.Game = class extends colyseus.Room {
     // TODO: Check if it is the players turn
     const player = this.state.clientPlayers.get(client.sessionId);
 
+    // Secret hallways
+    const secret = {
+      "Conference Room": "Jim's Office",
+      "Jim's Office": "Conference Room",
+      "Bathroom": "Annex",
+      "Annex": "Bathroom"
+    };
+
     // Initial player move
     if (player.currentLocation === "") {
       const firstMoveLocations = {
@@ -173,8 +181,10 @@ exports.Game = class extends colyseus.Room {
           this.movedOnTurn = true;
       } 
     }
-
-
+    else if (player.currentLocation in secret && secret[player.currentLocation] == room) { // Secret hallways
+      player.currentLocation = room;
+      this.movedOnTurn = true;
+    }
     // If the player chooses a room that has the current room name in it,
     // Then we can make the move
     else{
