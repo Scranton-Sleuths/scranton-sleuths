@@ -11,18 +11,18 @@ exports.Game = class extends colyseus.Room {
   playerNames = ["Michael Scott", "Dwight Schrutte", "Jim Halpert", "Pam Beesly", "Angela Martin", "Andy Bernard"];
   weaponNames = ["Stapler", "Mug", "Scissors", "Dwight's Nunchucks", "Pencil", "Calculator"];
   roomNames = ["Conference Room", "Michael's Office", "Bathroom", "Kitchen", "Break Room", "Warehouse", "Annex", "Reception", "Jim's Office"];
-  roomXY = ["10,100", "300,100", "600,100", "10,275", "300,275", "600,275", "10,450", "300,450", "600,450"];
-  playerStart = ["450,70", "10,208", "550,208", "10,383", "168,470", "430,470"]
+  roomXY = ["160,150", "450,150", "750,150", "160,325", "450,325", "750,325", "160,500", "450,500", "750,500"];
+  playerStart = ["600,70", "10,208", "850,213", "10,383", "263,580", "560,580"]
   hallways = ["Conference Room_Michael's Office", "Michael's Office_Bathroom",
     "Conference Room_Kitchen", "Michael's Office_Break Room", "Bathroom_Warehouse",
     "Kitchen_Break Room", "Break Room_Warehouse",
     "Kitchen_Annex", "Break Room_Reception", "Warehouse_Jim's Office",
     "Annex_Reception", "Reception_Jim's Office"];
-  hallwayXY = ["205,100", "500,100",
-    "10,188", "300,188", "600,188",
-    "155,275", "450,275",
-    "10,363", "300,363", "600,363",
-    "155,450", "450,450"]
+  hallwayXY = ["305,150", "600,150",
+    "110,238", "400,238", "700,238",
+    "255,325", "550,325",
+    "110,413", "400,413", "700,413",
+    "255,500", "550,500"]
 
   randomNumber(min, max) {
     return Math.floor(Math.random() * (max - min) + min);
