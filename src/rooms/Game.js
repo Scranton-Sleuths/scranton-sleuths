@@ -19,18 +19,10 @@ exports.Game = class extends colyseus.Room {
     "Kitchen_Annex", "Break Room_Reception", "Warehouse_Jim's Office",
     "Annex_Reception", "Reception_Jim's Office"];
   hallwayXY = ["305,150", "600,150",
-    "110,238", "400,238", "700,238",
-    "255,325", "550,325",
-    "110,413", "400,413", "700,413",
-    "255,500", "550,500"];
-  firstMoveLocations = {
-      "Michael Scott": "Michael's Office_Bathroom",
-      "Dwight Schrutte": "Conference Room_Kitchen",
-      "Jim Halpert": "Bathroom_Warehouse",
-      "Pam Beesly": "Kitchen_Annex",
-      "Angela Martin": "Annex_Reception",
-      "Andy Bernard": "Reception_Jim's Office"
-  }
+    "150,238", "450,238", "750,238",
+    "305,325", "605,325",
+    "150,413", "450,413", "750,413",
+    "305,500", "600,500"]
 
   randomNumber(min, max) {
     return Math.floor(Math.random() * (max - min) + min);
