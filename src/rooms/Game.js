@@ -184,6 +184,7 @@ exports.Game = class extends colyseus.Room {
     else if (player.currentLocation in secret && secret[player.currentLocation] == room) { // Secret hallways
       player.currentLocation = room;
       this.movedOnTurn = true;
+      player.moved = false;
     }
     // If the player chooses a room that has the current room name in it,
     // Then we can make the move
@@ -193,6 +194,7 @@ exports.Game = class extends colyseus.Room {
         if(player.currentLocation.includes(room)){
           player.currentLocation = room;
           this.movedOnTurn = true;
+          player.moved = false;
         }
       }
       else{
@@ -201,6 +203,7 @@ exports.Game = class extends colyseus.Room {
         if(room.includes(player.currentLocation)){
           player.currentLocation = room;
           this.movedOnTurn = true;
+          player.moved = false;
         }
       }
     }
@@ -241,8 +244,41 @@ exports.Game = class extends colyseus.Room {
 
   processSuggestion(client, suggestion){
     // TODO If it is the current players turn
+    if (client.sessionId != this.turnOrder[this.currentTurnPlayer]) {
+      return; // it's not their turn!
+    }
 
     const player = this.state.clientPlayers.get(client.sessionId);
+
+    let notInCornerRoom = true;
+    let cornerRooms = ["Conference Room", "Bathroom",  "Annex", "Jim's Office"];
+    for(var i = 0; i < cornerRooms.length; ++i){
+      if(player.currentLocation == cornerRooms[i]){
+        
+        notInCornerRoom = false;
+      }
+    }
+    
+    let room_exits = []
+    for(let i = 0; i < this.hallways.length; ++i){
+      if(this.hallways[i].includes(player.currentLocation) && this.hallways[i].includes("_")){
+        room_exits.push(this.hallways[i])
+      }
+    }
+
+    let count = 0
+    for (const playerObj of this.state.clientPlayers.values()) {
+      for(var i = 0; i < room_exits.length; ++i)
+        if (playerObj.currentLocation == room_exits[i]) {
+          count++;
+          break;
+        }
+    }
+    
+    // If player was not moved, is not in a corner room, and all exits are blocked
+    if(player.moved == false && notInCornerRoom && count == room_exits.length){
+      return;
+    }
     
 
     if(!player.currentLocation.includes("_") && player.currentLocation === suggestion.place && player.name != suggestion.person){
@@ -262,6 +298,7 @@ exports.Game = class extends colyseus.Room {
       if(suggestedPlayer){
         this.broadcast("suggestionMade", suggestionMade); 
         suggestedPlayer.currentLocation = player.currentLocation;
+        suggestedPlayer.moved = true;
       }
   }
 
