@@ -373,6 +373,19 @@ exports.Game = class extends colyseus.Room {
       client.send("dealCards", card_json);
     });
 
+    // Fill empty player spots with NPCs on the board
+    let npc_counter = this.numPlayers;
+    while(npc_counter < 6)
+    {
+      let x = parseInt(this.playerStart[npc_counter].split(',')[0]);
+      let y = parseInt(this.playerStart[npc_counter].split(',')[1]);
+      const player = new Player(this.playerNames[npc_counter], x, y);
+      player.isActive = false;
+      this.state.clientPlayers.set(npc_counter, player);
+
+      npc_counter++;
+    }
+
     // Randomize turn order
     this.randomize_turn_order();
   }
