@@ -19,10 +19,10 @@ exports.Game = class extends colyseus.Room {
     "Kitchen_Annex", "Break Room_Reception", "Warehouse_Jim's Office",
     "Annex_Reception", "Reception_Jim's Office"];
   hallwayXY = ["305,150", "600,150",
-    "110,238", "400,238", "700,238",
-    "255,325", "550,325",
-    "110,413", "400,413", "700,413",
-    "255,500", "550,500"];
+    "150,238", "450,238", "750,238",
+    "305,325", "605,325",
+    "150,413", "450,413", "750,413",
+    "305,500", "600,500"];
   firstMoveLocations = {
       "Michael Scott": "Michael's Office_Bathroom",
       "Dwight Schrutte": "Conference Room_Kitchen",
@@ -51,6 +51,7 @@ exports.Game = class extends colyseus.Room {
     this.turnOrder = [];
     this.currentTurnPlayer = 0;
     this.movedOnTurn = false;
+    this.numAccusations = 0;
 
     this.isGameOver = false;
 
@@ -182,10 +183,18 @@ exports.Game = class extends colyseus.Room {
   startNextTurn() {
     let sessionId;
     // find the next player in the turn order that's still active
+    let currentTurn = this.currentTurnPlayer;
     do {
       this.currentTurnPlayer = (this.currentTurnPlayer + 1) % this.numPlayers;
       sessionId = this.turnOrder[this.currentTurnPlayer];
-    } while (!this.state.clientPlayers[sessionId].isActive);
+      if (this.currentTurnPlayer == currentTurn && !this.state.clientPlayers[sessionId].isActive) {
+        // We looped all the way back around... nobody is active
+        // the game is now over, and we lost.
+        console.log("Oops! There are no turns left. How did we get here?");
+        this.broadcast("gameOver", "");
+        return;
+      }
+    } while (!this.state.clientPlayers[sessionId].isActive );
     
     let message = {id: sessionId, name: this.state.clientPlayers[sessionId].name}
     this.broadcast("newTurn", message); 
@@ -226,6 +235,7 @@ exports.Game = class extends colyseus.Room {
     else if (player.currentLocation in secret && secret[player.currentLocation] == room) { // Secret hallways
       player.currentLocation = room;
       this.movedOnTurn = true;
+      player.moved = false;
     }
     // If the player chooses a room that has the current room name in it,
     // Then we can make the move
@@ -235,6 +245,7 @@ exports.Game = class extends colyseus.Room {
         if(player.currentLocation.includes(room)){
           player.currentLocation = room;
           this.movedOnTurn = true;
+          player.moved = false;
         }
       }
       else{
@@ -243,6 +254,7 @@ exports.Game = class extends colyseus.Room {
         if(room.includes(player.currentLocation)){
           player.currentLocation = room;
           this.movedOnTurn = true;
+          player.moved = false;
         }
       }
     }
@@ -262,6 +274,7 @@ exports.Game = class extends colyseus.Room {
     console.log("Person:",accusation.person, "Place:", accusation.place, "Weapon:", accusation.weapon);
     //console.log("correct answer is");
     //console.log("Person:",this.answerPlayer, "Place:", this.answerRoom, "Weapon:", this.answerWeapon);
+    this.numAccusations += 1;
     let correctAccusation = {
       id: client.sessionId,
       accuser: player.name,
@@ -277,14 +290,53 @@ exports.Game = class extends colyseus.Room {
     else {
       console.log("Accusation is incorrect.", player.name, "has been eliminated from the game.");
       player.isActive = false;
-      client.send("wrongAccusation", correctAccusation);
+      if (this.numAccusations == this.numPlayers) {
+        this.isGameOver = true;
+        this.broadcast("gameOver", correctAccusation);
+      } else {
+        client.send("wrongAccusation", correctAccusation);
+        this.broadcast("playerOut", player.name, {except: client});
+      }
     }
   }
 
   processSuggestion(client, suggestion){
     // TODO If it is the current players turn
+    if (client.sessionId != this.turnOrder[this.currentTurnPlayer]) {
+      return; // it's not their turn!
+    }
 
     const player = this.state.clientPlayers.get(client.sessionId);
+
+    let notInCornerRoom = true;
+    let cornerRooms = ["Conference Room", "Bathroom",  "Annex", "Jim's Office"];
+    for(var i = 0; i < cornerRooms.length; ++i){
+      if(player.currentLocation == cornerRooms[i]){
+        
+        notInCornerRoom = false;
+      }
+    }
+    
+    let room_exits = []
+    for(let i = 0; i < this.hallways.length; ++i){
+      if(this.hallways[i].includes(player.currentLocation) && this.hallways[i].includes("_")){
+        room_exits.push(this.hallways[i])
+      }
+    }
+
+    let count = 0
+    for (const playerObj of this.state.clientPlayers.values()) {
+      for(var i = 0; i < room_exits.length; ++i)
+        if (playerObj.currentLocation == room_exits[i]) {
+          count++;
+          break;
+        }
+    }
+    
+    // If player was not moved, is not in a corner room, and all exits are blocked
+    if(player.moved == false && notInCornerRoom && count == room_exits.length){
+      return;
+    }
     
 
     if(!player.currentLocation.includes("_") && player.currentLocation === suggestion.place && player.name != suggestion.person){
@@ -304,6 +356,7 @@ exports.Game = class extends colyseus.Room {
       if(suggestedPlayer){
         this.broadcast("suggestionMade", suggestionMade); 
         suggestedPlayer.currentLocation = player.currentLocation;
+        suggestedPlayer.moved = true;
       }
   }
 

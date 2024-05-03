@@ -12,6 +12,7 @@ class Player extends schema.Schema{
       this.currentLocation = "";
       this.startX = x;
       this.startY = y;
+      this.moved = false;
       this.isActive = true;
       this.isNPC = false;
     }
