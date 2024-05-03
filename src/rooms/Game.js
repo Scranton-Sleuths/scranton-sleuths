@@ -22,7 +22,15 @@ exports.Game = class extends colyseus.Room {
     "150,238", "450,238", "750,238",
     "305,325", "605,325",
     "150,413", "450,413", "750,413",
-    "305,500", "600,500"]
+    "305,500", "600,500"];
+  firstMoveLocations = {
+      "Michael Scott": "Michael's Office_Bathroom",
+      "Dwight Schrutte": "Conference Room_Kitchen",
+      "Jim Halpert": "Bathroom_Warehouse",
+      "Pam Beesly": "Kitchen_Annex",
+      "Angela Martin": "Annex_Reception",
+      "Andy Bernard": "Reception_Jim's Office"
+  }
 
   randomNumber(min, max) {
     return Math.floor(Math.random() * (max - min) + min);
@@ -73,6 +81,14 @@ exports.Game = class extends colyseus.Room {
         this.state.board.set(this.hallways[index], location);
     }
 
+    //Create start areas
+    for (let index = 0; index < this.playerNames.length; index++) {
+      let x = parseInt(this.playerStart[index].split(',')[0]);
+      let y = parseInt(this.playerStart[index].split(',')[1]);
+      const location = new Location(x, y, this.playerNames[index], "start", ""); // TODO: Make an array of adjacent locations so we can add it here
+      this.state.board.set(this.playerNames[index], location);
+    }
+
     // TODO: Add all the onMessage functions here, like when a player clicks on a room. Ex:
         
     this.onMessage("move", (client, message) => {
@@ -85,6 +101,40 @@ exports.Game = class extends colyseus.Room {
       console.log("Initializing a game for " + message + " players!");
       this.init();
       this.broadcast("drawboard", ""); // Let all other clients know to draw the board
+    });
+
+    this.onMessage("resetGame", (client, message) => {
+      // Reset players
+
+      this.state.clientPlayers.forEach((player, key) => {
+        if(player.isNPC == false) {
+          player.isActive = true;
+          player.currentLocation = player.name;
+          player.cards.clear();
+        }
+      });
+
+      this.turnOrder = [];
+      this.currentTurnPlayer = 0;
+      this.movedOnTurn = false;
+      this.playerCards = [];
+      this.weaponCards = [];
+      this.roomCards = [];
+
+      this.broadcast("reset","");
+
+      this.create_all_cards();
+
+      // Michael scott should be the first player to go.
+      this.state.clientPlayers.forEach((value, key) => {
+        if(value.name == "Michael Scott") {
+          this.turnOrder.push(key);
+        }
+      });
+
+      this.isGameOver = false;
+      this.init();
+
     });
 
     this.onMessage("endTurn", (client, message) => {
@@ -175,16 +225,8 @@ exports.Game = class extends colyseus.Room {
     };
 
     // Initial player move
-    if (player.currentLocation === "") {
-      const firstMoveLocations = {
-        "Michael Scott": "Michael's Office_Bathroom",
-        "Dwight Schrutte": "Conference Room_Kitchen",
-        "Jim Halpert": "Bathroom_Warehouse",
-        "Pam Beesly": "Kitchen_Annex",
-        "Angela Martin": "Annex_Reception",
-        "Andy Bernard": "Reception_Jim's Office"
-      }
-      const requiredRoom = firstMoveLocations[player.name];
+    if (player.currentLocation === "" || player.currentLocation === player.name) {
+      const requiredRoom = this.firstMoveLocations[player.name];
       if (requiredRoom === room) {
           player.currentLocation = room;
           this.movedOnTurn = true;
@@ -354,7 +396,7 @@ exports.Game = class extends colyseus.Room {
     var unshuffled_turns = []
 
     this.state.clientPlayers.forEach((value, key) => {
-      if(value.name != "Michael Scott") {
+      if(value.name != "Michael Scott" && value.isNPC == false) {
         unshuffled_turns.push(key);
       } 
     });
@@ -430,14 +472,18 @@ exports.Game = class extends colyseus.Room {
     let npc_counter = this.numPlayers;
     while(npc_counter < 6)
     {
+      console.log("npcs: ", npc_counter);
       let x = parseInt(this.playerStart[npc_counter].split(',')[0]);
       let y = parseInt(this.playerStart[npc_counter].split(',')[1]);
       const player = new Player(this.playerNames[npc_counter], x, y);
       player.isActive = false;
+      player.isNPC = true;
       this.state.clientPlayers.set(npc_counter, player);
 
       npc_counter++;
     }
+
+    this.state.clientPlayers.forEach((player) => { console.log(player.isActive); console.log(player.name); })
 
     // Randomize turn order
     this.randomize_turn_order();
