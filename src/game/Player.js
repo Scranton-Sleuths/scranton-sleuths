@@ -13,6 +13,7 @@ class Player extends schema.Schema{
       this.startX = x;
       this.startY = y;
       this.isActive = true;
+      this.isNPC = false;
     }
 
     // Deal a card to this player
