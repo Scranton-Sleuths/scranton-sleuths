@@ -389,25 +389,9 @@ exports.Game = class extends colyseus.Room {
         suggestedPlayer.currentLocation = player.currentLocation;
         suggestedPlayer.moved = true;
 
-
-        //  // Get all player sessions except the one who made the suggestion
-        // const playerSessions = Array.from(this.state.clientPlayers.keys()).filter(sessionId => sessionId !== client.sessionId);
-
-        // // Ask each player for a response
-        // playerSessions.forEach(sessionId => {
-        //     const player2 = this.state.clientPlayers.get(sessionId);
-        //     let curResponse = {id: sessionId, cur: player2.name, accuser: player.name, person: suggestion.person, place: suggestion.place, weapon: suggestion.weapon}
-        //     player.send("askForResponse", curResponse);
-        // });
-
       }
   }
 
-  
-
-    // TODO:
-    // Go around and ask players if they have a card to show to prove 
-    // Suggestion wrong
 
   }
 
