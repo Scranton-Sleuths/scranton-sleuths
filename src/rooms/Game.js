@@ -153,6 +153,12 @@ exports.Game = class extends colyseus.Room {
       console.log("Suggestion received!");
       this.processSuggestion(client, message);
     });
+
+    this.onMessage("response", (client, message) => {
+      console.log("Response received!");
+      this.processResponse(client, message);
+    });
+
   }
 
   onJoin (client, options) {
@@ -188,6 +194,31 @@ exports.Game = class extends colyseus.Room {
       this.currentTurnPlayer = (this.currentTurnPlayer + 1) % this.numPlayers;
       sessionId = this.turnOrder[this.currentTurnPlayer];
       if (this.currentTurnPlayer == currentTurn && !this.state.clientPlayers[sessionId].isActive) {
+        // We looped all the way back around... nobody is active
+        // the game is now over, and we lost.
+        console.log("Oops! There are no turns left. How did we get here?");
+        this.broadcast("gameOver", "");
+        return;
+      }
+    } while (!this.state.clientPlayers[sessionId].isActive );
+    
+    let message = {id: sessionId, name: this.state.clientPlayers[sessionId].name}
+    this.broadcast("newTurn", message); 
+    this.movedOnTurn = false;
+  }
+
+  nextResponse(client) {
+    // Go to the next player
+    // Ask for response
+    // If next player is current player, output that no valid response to the suggestion has been made
+
+    let tmpSessionId;
+    // find the next player in the turn order that's still active
+    let currentTurn = this.currentTurnPlayer;
+    do {
+      this.currentTurnPlayer = (this.currentTurnPlayer + 1) % this.numPlayers;
+      tmpSessionId = this.turnOrder[this.currentTurnPlayer];
+      if (this.currentTurnPlayer == currentTurn && !this.state.clientPlayers[tmpSessionId].isActive) {
         // We looped all the way back around... nobody is active
         // the game is now over, and we lost.
         console.log("Oops! There are no turns left. How did we get here?");
@@ -357,13 +388,45 @@ exports.Game = class extends colyseus.Room {
         this.broadcast("suggestionMade", suggestionMade); 
         suggestedPlayer.currentLocation = player.currentLocation;
         suggestedPlayer.moved = true;
+
+
+        //  // Get all player sessions except the one who made the suggestion
+        // const playerSessions = Array.from(this.state.clientPlayers.keys()).filter(sessionId => sessionId !== client.sessionId);
+
+        // // Ask each player for a response
+        // playerSessions.forEach(sessionId => {
+        //     const player2 = this.state.clientPlayers.get(sessionId);
+        //     let curResponse = {id: sessionId, cur: player2.name, accuser: player.name, person: suggestion.person, place: suggestion.place, weapon: suggestion.weapon}
+        //     player.send("askForResponse", curResponse);
+        // });
+
       }
   }
+
+  
 
     // TODO:
     // Go around and ask players if they have a card to show to prove 
     // Suggestion wrong
 
+  }
+
+  processResponse(client, message){
+    let session1 = this.turnOrder[this.currentTurnPlayer];
+
+    const player = this.state.clientPlayers.get(client.sessionId);
+
+    if(session1 != client.sessionId && (message.card == message.sug.person || message.card == message.sug.place || message.card == message.sug.weapon)){
+      let responder = {
+        name: player.name,
+        card: message.card,
+        id: session1
+      }
+      this.broadcast("respondMessageValid", responder)
+    }
+    else{
+      client.send("respondMessageInvalid", "")
+    }
   }
 
   // Create card objects for all players, weapons, and rooms
