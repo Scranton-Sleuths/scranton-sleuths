@@ -270,6 +270,7 @@ exports.Game = class extends colyseus.Room {
     }
 
     if(accusation.person == null || accusation.place == null || accusation.weapon == null) {
+      client.send("illegalAction", "Select a person, place, and weapon.");
       return; // They didn't select a person/place/weapon combo!
     }
 
@@ -311,6 +312,7 @@ exports.Game = class extends colyseus.Room {
     }
 
     if(suggestion.person == null || suggestion.place == null || suggestion.weapon == null) {
+      client.send("illegalAction", "Select a person, place, and weapon.")
       return; // They didn't select a person/place/weapon combo!
     }
 
