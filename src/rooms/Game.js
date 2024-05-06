@@ -55,6 +55,9 @@ exports.Game = class extends colyseus.Room {
     this.suggestedOnTurn = false;
     this.numAccusations = 0;
 
+    this.startedInHallway = false;
+    this.wasSuggestionMade = false;
+
     this.isGameOver = false;
 
     console.log("Creating card objects!");
@@ -141,8 +144,32 @@ exports.Game = class extends colyseus.Room {
     });
 
     this.onMessage("endTurn", (client, message) => {
+      // You can't end your turn if you started in a hallway and never moved.
+      if( this.movedOnTurn == false) {
+        let is_in_hallway = false;
+        for(let i = 0; i < this.hallways.length; ++i){
+          if(this.hallways[i].includes(this.state.clientPlayers.get(client.sessionId).currentLocation)){
+            is_in_hallway = true;
+          }
+        }
+
+        if(is_in_hallway) {
+          client.send("illegalAction", "Must move first!");
+          return;
+        }
+      }
+
+      // If you came to a room from a hallway, you must make a suggestion
+      if(this.startedInHallway && !this.wasSuggestionMade) {
+        client.send("illegalAction", "Must make suggestion after moving into room!");
+        return;
+      }
+
       if (client.sessionId == this.turnOrder[this.currentTurnPlayer]) {
         // this player ended their turn
+        this.startedInHallway = false;
+        this.wasSuggestionMade = false;
+
         this.state.clientPlayers[client.sessionId].moved = false;
         this.startNextTurn();
       }
@@ -246,6 +273,12 @@ exports.Game = class extends colyseus.Room {
     // TODO: Check if it is the players turn
     const player = this.state.clientPlayers.get(client.sessionId);
 
+    if(player.currentLocation === room)
+    {
+      client.send("illegalAction", "Can't move to a room you're already in!");
+      return; 
+    }
+
     // Secret hallways
     const secret = {
       "Conference Room": "Jim's Office",
@@ -273,6 +306,7 @@ exports.Game = class extends colyseus.Room {
       // Hallway to room
       if(player.currentLocation.includes("_")){
         if(player.currentLocation.includes(room)){
+          this.startedInHallway = true;
           player.currentLocation = room;
           this.movedOnTurn = true;
           player.moved = false;
@@ -420,6 +454,8 @@ exports.Game = class extends colyseus.Room {
       this.nextResponse(suggestionMade);
     }
   }
+  
+    this.wasSuggestionMade = true;
 
   processResponse(client, message){
     if (client.sessionId != this.turnOrder[this.currentResponsePlayer]) {
