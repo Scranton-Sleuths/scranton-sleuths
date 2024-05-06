@@ -250,11 +250,23 @@ exports.Game = class extends colyseus.Room {
       }
       else{
         // Room to hallway
-        // TODO Check if hallway has a player in it.
         if(room.includes(player.currentLocation)){
-          player.currentLocation = room;
-          this.movedOnTurn = true;
-          player.moved = false;
+          let valid = true;
+          // Get other players, check if they are in the hallway
+          this.state.clientPlayers.forEach((value, key) => {
+            if(value.currentLocation == room) { // Hallway already occupied
+              valid = false;
+              return; // Break out of inner function/loop
+            } 
+          });
+          if (valid) {
+            player.currentLocation = room;
+            this.movedOnTurn = true;
+            player.moved = false;
+          }
+          else {
+            client.send("illegalAction", "You can't go there, someone's in your way.");
+          }
         }
       }
     }
