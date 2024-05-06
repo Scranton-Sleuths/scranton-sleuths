@@ -281,6 +281,11 @@ exports.Game = class extends colyseus.Room {
       return; // it's not their turn!
     }
 
+    if(accusation.person == null || accusation.place == null || accusation.weapon == null) {
+      client.send("illegalAction", "Select a person, place, and weapon.");
+      return; // They didn't select a person/place/weapon combo!
+    }
+
     const player = this.state.clientPlayers.get(client.sessionId);
     console.log("Accusation from", player.name);
     console.log("Person:",accusation.person, "Place:", accusation.place, "Weapon:", accusation.weapon);
@@ -316,6 +321,11 @@ exports.Game = class extends colyseus.Room {
     // TODO If it is the current players turn
     if (client.sessionId != this.turnOrder[this.currentTurnPlayer]) {
       return; // it's not their turn!
+    }
+
+    if(suggestion.person == null || suggestion.place == null || suggestion.weapon == null) {
+      client.send("illegalAction", "Select a person, place, and weapon.")
+      return; // They didn't select a person/place/weapon combo!
     }
 
     const player = this.state.clientPlayers.get(client.sessionId);
