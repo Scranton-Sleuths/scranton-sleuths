@@ -153,14 +153,20 @@ exports.Game = class extends colyseus.Room {
           }
         }
 
-        if(is_in_hallway) {
+        if(is_in_hallway && this.state.clientPlayers.get(client.sessionId).isActive) {
           client.send("illegalAction", "Must move first!");
           return;
         }
       }
 
+      if (this.currentResponsePlayer != -1) {
+        client.send("illegalAction", "Wait to end your turn until the other players respond to your Suggestion.");
+        console.log("Responding to suggestions, please hold.");
+        return; // can't end turn yet
+      }
+
       // If you came to a room from a hallway, you must make a suggestion
-      if(this.startedInHallway && !this.wasSuggestionMade) {
+      if(this.startedInHallway && !this.wasSuggestionMade && this.state.clientPlayers.get(client.sessionId).isActive) {
         client.send("illegalAction", "Must make suggestion after moving into room!");
         return;
       }
@@ -248,6 +254,7 @@ exports.Game = class extends colyseus.Room {
     if (this.currentResponsePlayer == this.currentTurnPlayer) {
       // there are no more people who can respond to the suggestion
       this.broadcast("noResponses", suggestion);
+      this.currentResponsePlayer = -1;
       return;
     }
 
@@ -355,6 +362,12 @@ exports.Game = class extends colyseus.Room {
       return; // it's not their turn!
     }
 
+    if (this.currentResponsePlayer != -1) {
+      client.send("illegalAction", "Wait to make an Accusation until the other players respond to your Suggestion.");
+      console.log("Responding to suggestions, please hold.");
+      return; // it's not their turn!
+    }
+
     if(accusation.person == null || accusation.place == null || accusation.weapon == null) {
       client.send("illegalAction", "Select a person, place, and weapon.");
       return; // They didn't select a person/place/weapon combo!
@@ -448,14 +461,13 @@ exports.Game = class extends colyseus.Room {
       suggestedPlayer.currentLocation = player.currentLocation;
       suggestedPlayer.moved = true;
       this.suggestedOnTurn = true;
+      this.wasSuggestionMade = true;
 
       // ask for first response
       this.currentResponsePlayer = this.currentTurnPlayer;
       this.nextResponse(suggestionMade);
     }
   }
-  
-    this.wasSuggestionMade = true;
 
   processResponse(client, message){
     if (client.sessionId != this.turnOrder[this.currentResponsePlayer]) {
@@ -466,11 +478,10 @@ exports.Game = class extends colyseus.Room {
 
     if (message.card != message.sug.person && message.card != message.sug.place && message.card != message.sug.weapon &&
         message.card != "None") {
-      client.send("illegalAction", "You can't respond with that card. Select one of the cards in the suggestion, or select None.");
+      client.send("illegalResponse", "You can't respond with that card. Select one of the cards in the suggestion, or select None.");
       console.log("Wrong card!");
       return; 
     }
-
 
     const player = this.state.clientPlayers.get(client.sessionId);
 
@@ -489,6 +500,7 @@ exports.Game = class extends colyseus.Room {
     }
     if(message.card == message.sug.person || message.card == message.sug.place || message.card == message.sug.weapon){
       this.broadcast("respondMessageValid", responder);
+      this.currentResponsePlayer = -1;
     }
     else{
       this.broadcast("respondMessageInvalid", responder);
