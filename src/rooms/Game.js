@@ -50,6 +50,7 @@ exports.Game = class extends colyseus.Room {
     this.currentNumPlayers = 0;
     this.turnOrder = [];
     this.currentTurnPlayer = 0;
+    this.currentResponsePlayer = -1;
     this.movedOnTurn = false;
     this.suggestedOnTurn = false;
     this.numAccusations = 0;
@@ -211,32 +212,24 @@ exports.Game = class extends colyseus.Room {
     this.suggestedOnTurn = false;
   }
 
-  nextResponse(client) {
+  nextResponse(suggestion) {
     // Go to the next player
     // Ask for response
     // If next player is current player, output that no valid response to the suggestion has been made
 
-    let tmpSessionId;
-    // find the next player in the turn order that's still active
-    let currentTurn = this.currentTurnPlayer;
-    do {
-      this.currentTurnPlayer = (this.currentTurnPlayer + 1) % this.numPlayers;
-      tmpSessionId = this.turnOrder[this.currentTurnPlayer];
-      if (this.currentTurnPlayer == currentTurn && !this.state.clientPlayers[tmpSessionId].isActive) {
-        // We looped all the way back around... nobody is active
-        // the game is now over, and we lost.
-        console.log("Oops! There are no turns left. How did we get here?");
-        this.broadcast("gameOver", "");
-        return;
-      }
-    } while (!this.state.clientPlayers[sessionId].isActive );
-    
-    let message = {id: sessionId, name: this.state.clientPlayers[sessionId].name}
-    this.broadcast("newTurn", message); 
-    this.movedOnTurn = false;
+    this.currentResponsePlayer = (this.currentResponsePlayer + 1) % this.numPlayers;
+    if (this.currentResponsePlayer == this.currentTurnPlayer) {
+      // there are no more people who can respond to the suggestion
+      this.broadcast("noResponses", suggestion);
+      return;
+    }
+
+    let tmpSessionId = this.turnOrder[this.currentResponsePlayer];
+    let nextResponder = this.clients.getById(tmpSessionId);
+    nextResponder.send("respondToSuggestion", suggestion);
   }
 
-  // TODO: Process a move request by a player
+  // Process a move request by a player
   processMove(client, room) {
     if (client.sessionId != this.turnOrder[this.currentTurnPlayer]) {
       client.send("illegalAction", "It's not your turn!");
@@ -416,30 +409,54 @@ exports.Game = class extends colyseus.Room {
       }
     }
 
-
     if(suggestedPlayer){
       this.broadcast("suggestionMade", suggestionMade); 
       suggestedPlayer.currentLocation = player.currentLocation;
       suggestedPlayer.moved = true;
       this.suggestedOnTurn = true;
+
+      // ask for first response
+      this.currentResponsePlayer = this.currentTurnPlayer;
+      this.nextResponse(suggestionMade);
     }
   }
 
   processResponse(client, message){
-    let session1 = this.turnOrder[this.currentTurnPlayer];
+    if (client.sessionId != this.turnOrder[this.currentResponsePlayer]) {
+      client.send("illegalAction", "It's not your turn to respond!");
+      console.log("It's not their turn to respond!");
+      return; // it's not their turn!
+    }
+
+    if (message.card != message.sug.person && message.card != message.sug.place && message.card != message.sug.weapon &&
+        message.card != "None") {
+      client.send("illegalAction", "You can't respond with that card. Select one of the cards in the suggestion, or select None.");
+      console.log("Wrong card!");
+      return; 
+    }
+
 
     const player = this.state.clientPlayers.get(client.sessionId);
 
-    if(session1 != client.sessionId && (message.card == message.sug.person || message.card == message.sug.place || message.card == message.sug.weapon)){
-      let responder = {
-        name: player.name,
-        card: message.card,
-        id: session1
-      }
-      this.broadcast("respondMessageValid", responder)
+    if (message.card == "None" && 
+        (player.has_card(message.sug.person) || 
+         player.has_card(message.sug.place) || 
+         player.has_card(message.sug.weapon))) {
+      client.send("illegalResponse", "You have to respond with a valid card if you have one.");
+      return;   
+    }
+
+    let responder = {
+      name: player.name,
+      card: message.card,
+      id: this.turnOrder[this.currentTurnPlayer] // ID of accuser
+    }
+    if(message.card == message.sug.person || message.card == message.sug.place || message.card == message.sug.weapon){
+      this.broadcast("respondMessageValid", responder);
     }
     else{
-      client.send("respondMessageInvalid", "")
+      this.broadcast("respondMessageInvalid", responder);
+      this.nextResponse(message.sug);
     }
   }
 
