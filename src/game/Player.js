@@ -21,6 +21,16 @@ class Player extends schema.Schema{
     give_card(card) {
       this.cards.push(card);
     }
+
+    has_card(card) {
+      let has_card = false;
+      this.cards.forEach(c => {
+        if (card == c.name)
+          has_card = true;
+          return;
+      });
+      return has_card;
+    }
 }
 
 module.exports = Player;
