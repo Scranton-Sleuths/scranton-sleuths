@@ -53,6 +53,9 @@ exports.Game = class extends colyseus.Room {
     this.movedOnTurn = false;
     this.numAccusations = 0;
 
+    this.startedInHallway = false;
+    this.wasSuggestionMade = false;
+
     this.isGameOver = false;
 
     console.log("Creating card objects!");
@@ -153,8 +156,16 @@ exports.Game = class extends colyseus.Room {
         }
       }
 
+      // If you came to a room from a hallway, you must make a suggestion
+      if(this.startedInHallway && !this.wasSuggestionMade) {
+        client.send("illegalAction", "Must make suggestion after moving into room!");
+        return;
+      }
+
       if (client.sessionId == this.turnOrder[this.currentTurnPlayer]) {
         // this player ended their turn
+        this.startedInHallway = false;
+        this.wasSuggestionMade = false;
         this.startNextTurn();
       }
     });
@@ -264,6 +275,7 @@ exports.Game = class extends colyseus.Room {
       // Hallway to room
       if(player.currentLocation.includes("_")){
         if(player.currentLocation.includes(room)){
+          this.startedInHallway = true;
           player.currentLocation = room;
           this.movedOnTurn = true;
           player.moved = false;
@@ -380,6 +392,8 @@ exports.Game = class extends colyseus.Room {
         suggestedPlayer.moved = true;
       }
   }
+  
+    this.wasSuggestionMade = true;
 
     // TODO:
     // Go around and ask players if they have a card to show to prove 
